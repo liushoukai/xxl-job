@@ -2,3 +2,4 @@
 -DLOG_HOME=work/log
 -Xms500m
 -Xmx2g
+-Dspring.profiles.active=test

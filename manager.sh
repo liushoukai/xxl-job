@@ -73,9 +73,9 @@ read_vmoptions() {
 # detect if execute as root user
 run_as_user=''
 run_as_root=true
-user_id=`id -u`
-user_name=`id -u -n`
-if [ -z "$run_as_user" -a $user_id -ne 0 ]; then
+user_id=$(id -u)
+user_name=$(id -u -n)
+if [ -z "$run_as_user" -a "$user_id" -ne 0 ]; then
   run_as_root=false
 elif [ -n "$run_as_user" -a "$run_as_user" != 'root' ]; then
   run_as_root=false
@@ -89,20 +89,19 @@ if $run_as_root; then
   exit 1
 elif [ -n "$run_as_user" -a "$run_as_user" != "$user_name" ]; then
   # re-execute launcher script as specified user
-  exec su - $run_as_user "$prg_dir/$progname" $@
+  exec su - "$run_as_user" "$prg_dir/$progname" "$@"
 fi
 
 ##########################################################
 
 # execute command
 app_java_home=/usr/local/java
-MAIN_CLASS=org.springframework.boot.loader.JarLauncher
 
-APP_DIR=/data/service/xxl-job-2.4.1
+APP_DIR=/data/service/xxl-job-admin-3.2.1
 CUR_DIR=$(pwd)
 
 BIN_DIR=$APP_DIR/bin
-ETC_DIR=$APP_DIR/etc
+CONF_DIR=$APP_DIR/conf
 LIB_DIR=$APP_DIR/lib
 
 WORK_DIR=$APP_DIR/work
@@ -113,7 +112,7 @@ DATA_DIR=$WORK_DIR/data
 # re-execute launcher script as specified cwd
 if [[ "$CUR_DIR" != "$APP_DIR" ]]; then
   echo "Change the process current working directory"
-  cd $APP_DIR && exec "$BIN_DIR/run.sh" $@
+  cd $APP_DIR && exec "$BIN_DIR/manager.sh" $@
 fi
 
 echo $APP_DIR
@@ -124,9 +123,10 @@ start() {
     # read jvm.options config file
     vmoptions_val=""
     read_vmoptions "$BIN_DIR/jvm.options"
-    echo "$app_java_home/bin/java -classpath $ETC_DIR/:$LIB_DIR/* $vmoptions_val $MAIN_CLASS"
-    nohup "$app_java_home/bin/java" -classpath "$ETC_DIR/:$LIB_DIR/*" $vmoptions_val $MAIN_CLASS > $LOG_DIR/stdout.log 2>&1 &
+    export LOG_HOME=work/log
+    nohup $app_java_home/bin/java $vmoptions_val -jar $LIB_DIR/xxl-job-admin-3.2.1-SNAPSHOT.jar --spring.config.additional-location=$CONF_DIR/ > $LOG_HOME/stdout.log 2>&1 &
     echo $! >"$PID_FILE"
+    cat $PID_FILE 2>/dev/null
 }
 
 stop() {
@@ -148,10 +148,11 @@ case "$1" in
     ;;
     restart)
         stop
+        sleep 3
         start
     ;;
     *)
-        echo "Usage: $0 {start|stop|run|run-redirect|status|restart|force-reload}"
+        echo "Usage: $0 {start|stop|restart}"
         exit 1
     ;;
 esac
