@@ -124,7 +124,9 @@ start() {
     vmoptions_val=""
     read_vmoptions "$BIN_DIR/jvm.options"
     export LOG_HOME=work/log
-    nohup $app_java_home/bin/java $vmoptions_val -jar $LIB_DIR/xxl-job-admin-3.2.1-SNAPSHOT.jar --spring.config.additional-location=$CONF_DIR/ > $LOG_HOME/stdout.log 2>&1 &
+    nohup $app_java_home/bin/java $vmoptions_val -jar $LIB_DIR/xxl-job-admin-3.2.1-SNAPSHOT.jar \
+     --spring.config.additional-location=$CONF_DIR/ --spring.profiles.active="${APP_ENV:-dev}" > $LOG_HOME/stdout.log 2>&1 &
+    echo "$app_java_home/bin/java $vmoptions_val -jar $LIB_DIR/xxl-job-admin-3.2.1-SNAPSHOT.jar --spring.config.additional-location=$CONF_DIR/ --spring.profiles.active=${APP_ENV:-dev}"
     echo $! >"$PID_FILE"
     cat $PID_FILE 2>/dev/null
 }
