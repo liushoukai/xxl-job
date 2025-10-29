@@ -1,6 +1,13 @@
 #!/bin/bash
 
-echo "Hello"
+# 严格模式
+set -euo pipefail # 兼容性写法（部分 shell 可能不支持 pipefail）
+shopt -s failglob nullglob
+
+# 调试模式（按需启用），用法：DEBUG=true ./your_script.sh
+if [[ "${DEBUG:-}" == "true" ]]; then
+  set -xv
+fi
 
 package_name="xxl-job-admin-3.2.1"
 
