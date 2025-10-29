@@ -10,8 +10,8 @@ import com.xxl.job.core.server.EmbedServer;
 import com.xxl.job.core.thread.JobLogFileCleanThread;
 import com.xxl.job.core.thread.JobThread;
 import com.xxl.job.core.thread.TriggerCallbackThread;
-import com.xxl.job.core.util.IpUtil;
-import com.xxl.job.core.util.NetUtil;
+import com.xxl.tool.core.StringTool;
+import com.xxl.tool.http.IPTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 public class XxlJobExecutor  {
     private static final Logger logger = LoggerFactory.getLogger(XxlJobExecutor.class);
 
-    // ---------------------- param ----------------------
+    // ---------------------- field ----------------------
     private String adminAddresses;
     private String accessToken;
     private int timeout;
@@ -147,17 +147,18 @@ public class XxlJobExecutor  {
     private void initEmbedServer(String address, String ip, int port, String appname, String accessToken) throws Exception {
 
         // fill ip port
-        port = port>0?port: NetUtil.findAvailablePort(9999);
-        ip = (ip!=null&&ip.trim().length()>0)?ip: IpUtil.getIp();
+        port = port>0?port: IPTool.getAvailablePort(9999);
+        ip = StringTool.isNotBlank(ip) ? ip : IPTool.getIp();
 
         // generate address
-        if (address==null || address.trim().length()==0) {
-            String ip_port_address = IpUtil.getIpPort(ip, port);   // registry-address：default use address to registry , otherwise use ip:port if address is null
+        if (StringTool.isBlank(address)) {
+            // registry-address：default use address to registry , otherwise use ip:port if address is null
+            String ip_port_address = IPTool.toAddressString(ip, port);
             address = "http://{ip_port}/".replace("{ip_port}", ip_port_address);
         }
 
         // accessToken
-        if (accessToken==null || accessToken.trim().length()==0) {
+        if (StringTool.isBlank(accessToken)) {
             logger.warn(">>>>>>>>>>> xxl-job accessToken is empty. To ensure system security, please set the accessToken.");
         }
 
@@ -183,11 +184,11 @@ public class XxlJobExecutor  {
     public static IJobHandler loadJobHandler(String name){
         return jobHandlerRepository.get(name);
     }
-    public static IJobHandler registJobHandler(String name, IJobHandler jobHandler){
+    public static IJobHandler registryJobHandler(String name, IJobHandler jobHandler){
         logger.info(">>>>>>>>>>> xxl-job register jobhandler success, name:{}, jobHandler:{}", name, jobHandler);
         return jobHandlerRepository.put(name, jobHandler);
     }
-    protected void registJobHandler(XxlJob xxlJob, Object bean, Method executeMethod){
+    protected void registryJobHandler(XxlJob xxlJob, Object bean, Method executeMethod){
         if (xxlJob == null) {
             return;
         }
@@ -237,7 +238,7 @@ public class XxlJobExecutor  {
         }
 
         // registry jobhandler
-        registJobHandler(name, new MethodJobHandler(bean, executeMethod, initMethod, destroyMethod));
+        registryJobHandler(name, new MethodJobHandler(bean, executeMethod, initMethod, destroyMethod));
 
     }
 

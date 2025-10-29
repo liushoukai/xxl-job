@@ -6,19 +6,19 @@ import com.xxl.job.admin.model.XxlJobInfo;
 import com.xxl.job.admin.model.XxlJobLogReport;
 import com.xxl.job.admin.scheduler.config.XxlJobAdminBootstrap;
 import com.xxl.job.admin.scheduler.cron.CronExpression;
-import com.xxl.job.admin.scheduler.enums.MisfireStrategyEnum;
-import com.xxl.job.admin.scheduler.enums.ScheduleTypeEnum;
+import com.xxl.job.admin.scheduler.misfire.MisfireStrategyEnum;
 import com.xxl.job.admin.scheduler.route.ExecutorRouteStrategyEnum;
 import com.xxl.job.admin.scheduler.thread.JobScheduleHelper;
 import com.xxl.job.admin.scheduler.trigger.TriggerTypeEnum;
+import com.xxl.job.admin.scheduler.type.ScheduleTypeEnum;
 import com.xxl.job.admin.service.XxlJobService;
 import com.xxl.job.admin.util.I18nUtil;
 import com.xxl.job.admin.util.JobGroupPermissionUtil;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.enums.ExecutorBlockStrategyEnum;
 import com.xxl.job.core.glue.GlueTypeEnum;
-import com.xxl.job.core.util.DateUtil;
 import com.xxl.sso.core.model.LoginInfo;
+import com.xxl.tool.core.DateTool;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -273,10 +273,12 @@ public class XxlJobServiceImpl implements XxlJobService {
 
 		// next trigger time (5s后生效，避开预读周期)
 		long nextTriggerTime = exists_jobInfo.getTriggerNextTime();
-		boolean scheduleDataNotChanged = jobInfo.getScheduleType().equals(exists_jobInfo.getScheduleType()) && jobInfo.getScheduleConf().equals(exists_jobInfo.getScheduleConf());
+		boolean scheduleDataNotChanged = jobInfo.getScheduleType().equals(exists_jobInfo.getScheduleType())
+				&& jobInfo.getScheduleConf().equals(exists_jobInfo.getScheduleConf());		// 触发配置如果不变，避免重复计算；
 		if (exists_jobInfo.getTriggerStatus() == 1 && !scheduleDataNotChanged) {
 			try {
-				Date nextValidTime = JobScheduleHelper.generateNextValidTime(jobInfo, new Date(System.currentTimeMillis() + JobScheduleHelper.PRE_READ_MS));
+				// generate next trigger time
+				Date nextValidTime = scheduleTypeEnum.getScheduleType().generateNextTriggerTime(jobInfo, new Date(System.currentTimeMillis() + JobScheduleHelper.PRE_READ_MS));
 				if (nextValidTime == null) {
 					return ReturnT.ofFail ( (I18nUtil.getString("schedule_type")+I18nUtil.getString("system_unvalid")) );
 				}
@@ -343,7 +345,7 @@ public class XxlJobServiceImpl implements XxlJobService {
 			return ReturnT.ofFail(I18nUtil.getString("system_permission_limit"));
 		}
 
-		// valid
+		// valid ScheduleType: can not be none
 		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.match(xxlJobInfo.getScheduleType(), ScheduleTypeEnum.NONE);
 		if (ScheduleTypeEnum.NONE == scheduleTypeEnum) {
 			return ReturnT.ofFail(I18nUtil.getString("schedule_type_none_limit_start"));
@@ -352,7 +354,9 @@ public class XxlJobServiceImpl implements XxlJobService {
 		// next trigger time (5s后生效，避开预读周期)
 		long nextTriggerTime = 0;
 		try {
-			Date nextValidTime = JobScheduleHelper.generateNextValidTime(xxlJobInfo, new Date(System.currentTimeMillis() + JobScheduleHelper.PRE_READ_MS));
+			// generate next trigger time
+			Date nextValidTime = scheduleTypeEnum.getScheduleType().generateNextTriggerTime(xxlJobInfo, new Date(System.currentTimeMillis() + JobScheduleHelper.PRE_READ_MS));
+
 			if (nextValidTime == null) {
 				return ReturnT.ofFail ( (I18nUtil.getString("schedule_type")+I18nUtil.getString("system_unvalid")) );
 			}
@@ -468,7 +472,7 @@ public class XxlJobServiceImpl implements XxlJobService {
 
 		if (logReportList!=null && logReportList.size()>0) {
 			for (XxlJobLogReport item: logReportList) {
-				String day = DateUtil.formatDate(item.getTriggerDay());
+				String day = DateTool.formatDate(item.getTriggerDay());
 				int triggerDayCountRunning = item.getRunningCount();
 				int triggerDayCountSuc = item.getSucCount();
 				int triggerDayCountFail = item.getFailCount();
@@ -484,7 +488,7 @@ public class XxlJobServiceImpl implements XxlJobService {
 			}
 		} else {
 			for (int i = -6; i <= 0; i++) {
-				triggerDayList.add(DateUtil.formatDate(DateUtil.addDays(new Date(), i)));
+				triggerDayList.add(DateTool.formatDate(DateTool.addDays(new Date(), i)));
 				triggerDayCountRunningList.add(0);
 				triggerDayCountSucList.add(0);
 				triggerDayCountFailList.add(0);
