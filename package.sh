@@ -25,3 +25,5 @@ cp ./xxl-job-admin/src/main/resources/application*.properties ./$package_name/co
 tar -czvf $package_name.tar.gz ./$package_name
 
 tree -L 2 $package_name
+
+rm -rf $package_name
