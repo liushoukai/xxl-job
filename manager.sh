@@ -112,11 +112,11 @@ DATA_DIR=$WORK_DIR/data
 # re-execute launcher script as specified cwd
 if [[ "$CUR_DIR" != "$APP_DIR" ]]; then
   echo "Change the process current working directory"
-  cd $APP_DIR && exec "$BIN_DIR/manager.sh" $@
+  cd $APP_DIR && exec "$BIN_DIR/manager.sh" "$@"
 fi
 
 echo $APP_DIR
-echo $CUR_DIR
+echo "$CUR_DIR"
 
 start() {
     echo "Starting application"
