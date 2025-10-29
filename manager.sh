@@ -75,9 +75,9 @@ run_as_user=''
 run_as_root=true
 user_id=$(id -u)
 user_name=$(id -u -n)
-if [ -z "$run_as_user" -a "$user_id" -ne 0 ]; then
+if [ -z "$run_as_user" ] && [ "$user_id" -ne 0 ]; then
   run_as_root=false
-elif [ -n "$run_as_user" -a "$run_as_user" != 'root' ]; then
+elif [ -n "$run_as_user" ] && [ "$run_as_user" != 'root' ]; then
   run_as_root=false
 fi
 
@@ -87,7 +87,7 @@ if $run_as_root; then
   echo 'WARNING: Detected execution as "root" user.  This is NOT recommended!'
   echo 'WARNING: ************************************************************'
   exit 1
-elif [ -n "$run_as_user" -a "$run_as_user" != "$user_name" ]; then
+elif [ -n "$run_as_user" ] && [ "$run_as_user" != "$user_name" ]; then
   # re-execute launcher script as specified user
   exec su - "$run_as_user" "$prg_dir/$progname" "$@"
 fi
