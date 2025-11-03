@@ -1,0 +1,4 @@
+-Dserver.port=9100
+-DLOG_HOME=work/log
+-Xms500m
+-Xmx2g
