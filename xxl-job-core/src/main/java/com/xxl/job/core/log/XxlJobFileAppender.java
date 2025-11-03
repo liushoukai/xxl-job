@@ -1,6 +1,6 @@
 package com.xxl.job.core.log;
 
-import com.xxl.job.core.biz.model.LogResult;
+import com.xxl.job.core.openapi.model.LogResult;
 import com.xxl.tool.core.StringTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,37 +176,6 @@ public class XxlJobFileAppender {
 
 		// result
         return new LogResult(fromLineNum, toLineNum, logContentBuilder.toString(), false);
-	}
-
-	/**
-	 * read log data
-	 * @param logFile
-	 * @return log line content
-	 */
-	public static String readLines(File logFile){
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new InputStreamReader(new FileInputStream(logFile), "utf-8"));
-			if (reader != null) {
-				StringBuilder sb = new StringBuilder();
-				String line = null;
-				while ((line = reader.readLine()) != null) {
-					sb.append(line).append("\n");
-				}
-				return sb.toString();
-			}
-		} catch (IOException e) {
-			logger.error(e.getMessage(), e);
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-					logger.error(e.getMessage(), e);
-				}
-			}
-		}
-		return null;
 	}
 
 }

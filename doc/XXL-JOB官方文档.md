@@ -1775,7 +1775,7 @@ XXL-JOB 目标是一种跨平台、跨语言的任务调度规范和协议。
 
 ### 6.1 调度中心 RESTful API
 
-API服务位置：com.xxl.job.core.biz.AdminBiz （ com.xxl.job.admin.controller.JobApiController ）
+API服务位置：com.xxl.job.core.openapi.AdminBiz （ com.xxl.job.admin.controller.JobApiController ）
 API服务请求参考代码：com.xxl.job.adminbiz.AdminBizTest
 
 #### a、任务回调
@@ -1857,7 +1857,7 @@ Header：
 
 ### 6.2 执行器 RESTful API
 
-API服务位置：com.xxl.job.core.biz.ExecutorBiz
+API服务位置：com.xxl.job.core.openapi.ExecutorBiz
 API服务请求参考代码：com.xxl.job.executorbiz.ExecutorBizTest
 
 #### a、心跳检测
@@ -1919,7 +1919,7 @@ Header：
         "jobId":1,                                  // 任务ID
         "executorHandler":"demoJobHandler",         // 任务标识
         "executorParams":"demoJobHandler",          // 任务参数
-        "executorBlockStrategy":"COVER_EARLY",      // 任务阻塞策略，可选值参考 com.xxl.job.core.enums.ExecutorBlockStrategyEnum
+        "executorBlockStrategy":"COVER_EARLY",      // 任务阻塞策略，可选值参考 com.xxl.job.core.constant.ExecutorBlockStrategyEnum
         "executorTimeout":0,                        // 任务超时时间，单位秒，大于零时生效
         "logId":1,                                  // 本次调度日志ID
         "logDateTime":1586629003729,                // 本次调度日志时间
@@ -2598,17 +2598,15 @@ public void execute() {
 - 2、【优化】执行器任务Bean扫描逻辑优化，完善懒加载Bean检测及过滤机制；
 - 3、【优化】调度时间轮强化，保障不重不漏：调度时间轮单刻度数据去重，避免极端情况下任务重复执行；时间轮转动时校验临近刻度，避免极端情况下遗漏刻度；
 - 4、【优化】任务调度中心调度锁逻辑优化，事务SQL下沉至Mapper层统一管理，并增加测试用例，提升代码可读性以及可维护性；
-- 5、【优化】报表统计SQL优化，修复小概率情况下查询null值问题；
-- 6、【重构】调度过期策略、调度类型策略逻辑重构，代码组件化拆分并完善日志，提升健壮性及可维护性；
-- 7、【重构】任务调度中心底层组件重构，组件初始化以及销毁逻辑统一处理，任务触发及和回调逻辑优化，避免资源泄漏风险；
-- 8、【重构】任务调度中心底层组件模块化拆分，移除组件单例以及静态代码逻辑，提升组件可维护性；
-- 9、【修复】调度预读任务数量调整，改为调度线程池大小x10，降低事务颗粒度，提升性能及稳定性；
-- 10、【修复】合并PR-2369，修复脚本任务参数取值问题；
-- 11、【优化】调度组件日志完善，提升边界情况下问题定位效率；
-- 12、【升级】升级多项maven依赖至较新版本，如 netty、groovy、spring、spring-ai、dify 等；
-- 14、【优化】任务回调失败日志读写磁盘逻辑优化，解决极端情况下大文件读写内存问题；
-- 15、【修复】脚本任务process销毁逻辑优化，解决风险情况下脚本进程无法终止问题；
-- 16、【强化】通用HTTP任务（httpJobHandler）强化，支持更丰富请求参数设置，完整参数示例如下：
+- 5、【优化】报表统计SQL优化，修复小概率情况下查询null值问题；报表初始化SQL优化，修复小概率情况增改竞争问题；
+- 6、【优化】任务回调失败日志读写磁盘逻辑优化，解决极端情况下大文件读写内存问题；
+- 7、【重构】调度过期策略、调度类型策略逻辑重构，代码组件化拆分并完善日志，提升健壮性及可维护性；
+- 8、【重构】任务调度中心底层组件重构，组件初始化以及销毁逻辑统一处理，任务触发及和回调逻辑优化，避免资源泄漏风险；
+- 9、【重构】任务调度中心底层组件模块化拆分，移除组件单例以及静态代码逻辑，提升组件可维护性；
+- 10、【修复】脚本任务process销毁逻辑优化，解决风险情况下脚本进程无法终止问题；
+- 11、【修复】调度预读任务数量调整，改为调度线程池大小x10，降低事务颗粒度，提升性能及稳定性；
+- 12、【修复】合并PR-2369，修复脚本任务参数取值问题；
+- 13、【强化】通用HTTP任务（httpJobHandler）强化，支持更丰富请求参数设置，完整参数示例如下：
 ```
 {
     "url": "http://www.baidu.com",
@@ -2628,10 +2626,13 @@ public void execute() {
     "auth": "auth data"
 }
 ```
-- 17、【ING】UI框架重构升级，提升交互体验；
-- 18、【ING】调整资源加载逻辑，移除不必要的拦截器逻辑，提升页面加载效率；
-- 19、【ING】规范API交互协议，通用响应结构体调整为Response；
-- 20、【ING】Http通讯组件升级，基于接口代理方式重构；
+- 14、【优化】调度组件日志完善，提升边界情况下问题定位效率；
+- 15、【升级】升级多项maven依赖至较新版本，如 netty、groovy、spring、spring-ai、dify 等；
+- 16、【重构】规范API交互协议，通用响应结构体调整为Response，调度中心API统一为Response封装数据；
+（注意：响应结构体从ReturnT升级为Response，其中属性值“content”会调整为“data”，取值逻辑需注意）
+- 17、【升级】Http通讯组件升级，基于接口代理方式重构通讯组件，提升组件性能及扩展性；
+- 18、【ING】UI框架重构升级，提升交互体验；
+- 19、【ING】调整资源加载逻辑，移除不必要的拦截器逻辑，提升页面加载效率；
 
 
 ### TODO LIST

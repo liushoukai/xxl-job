@@ -1,16 +1,16 @@
-package com.xxl.job.core.biz.model;
+package com.xxl.job.core.openapi.model;
 
 import java.io.Serializable;
 
 /**
  * @author xuxueli 2020-04-11 22:27
  */
-public class LogParam implements Serializable {
+public class LogRequest implements Serializable {
     private static final long serialVersionUID = 42L;
 
-    public LogParam() {
+    public LogRequest() {
     }
-    public LogParam(long logDateTim, long logId, int fromLineNum) {
+    public LogRequest(long logDateTim, long logId, int fromLineNum) {
         this.logDateTim = logDateTim;
         this.logId = logId;
         this.fromLineNum = fromLineNum;

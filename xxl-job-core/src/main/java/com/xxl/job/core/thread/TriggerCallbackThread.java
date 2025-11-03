@@ -1,11 +1,10 @@
 package com.xxl.job.core.thread;
 
-import com.xxl.job.core.biz.AdminBiz;
-import com.xxl.job.core.biz.model.HandleCallbackParam;
-import com.xxl.job.core.biz.model.ReturnT;
+import com.xxl.job.core.openapi.AdminBiz;
+import com.xxl.job.core.openapi.model.HandleCallbackRequest;
 import com.xxl.job.core.context.XxlJobContext;
 import com.xxl.job.core.context.XxlJobHelper;
-import com.xxl.job.core.enums.RegistryConfig;
+import com.xxl.job.core.constant.Const;
 import com.xxl.job.core.executor.XxlJobExecutor;
 import com.xxl.job.core.log.XxlJobFileAppender;
 import com.xxl.tool.core.ArrayTool;
@@ -14,6 +13,7 @@ import com.xxl.tool.core.StringTool;
 import com.xxl.tool.encrypt.Md5Tool;
 import com.xxl.tool.gson.GsonTool;
 import com.xxl.tool.io.FileTool;
+import com.xxl.tool.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +41,8 @@ public class TriggerCallbackThread {
     /**
      * job results callback queue
      */
-    private final LinkedBlockingQueue<HandleCallbackParam> callBackQueue = new LinkedBlockingQueue<>();
-    public static void pushCallBack(HandleCallbackParam callback){
+    private final LinkedBlockingQueue<HandleCallbackRequest> callBackQueue = new LinkedBlockingQueue<>();
+    public static void pushCallBack(HandleCallbackRequest callback){
         getInstance().callBackQueue.add(callback);
         logger.debug(">>>>>>>>>>> xxl-job, push callback request, logId:{}", callback.getLogId());
     }
@@ -72,11 +72,11 @@ public class TriggerCallbackThread {
                 // normal callback
                 while(!toStop){
                     try {
-                        HandleCallbackParam callback = getInstance().callBackQueue.take();
+                        HandleCallbackRequest callback = getInstance().callBackQueue.take();
                         if (callback != null) {
 
                             // collect callback data
-                            List<HandleCallbackParam> callbackParamList = new ArrayList<>();
+                            List<HandleCallbackRequest> callbackParamList = new ArrayList<>();
                             callbackParamList.add(callback);                                            // add one element
                             int drainToNum = getInstance().callBackQueue.drainTo(callbackParamList);    // drainTo other all elements
 
@@ -95,7 +95,7 @@ public class TriggerCallbackThread {
                 // thead stop, callback lasttime
                 try {
                     // collect callback data
-                    List<HandleCallbackParam> callbackParamList = new ArrayList<>();
+                    List<HandleCallbackRequest> callbackParamList = new ArrayList<>();
                     int drainToNum = getInstance().callBackQueue.drainTo(callbackParamList);
 
                     // do callback
@@ -132,7 +132,7 @@ public class TriggerCallbackThread {
 
                     }
                     try {
-                        TimeUnit.SECONDS.sleep(RegistryConfig.BEAT_TIMEOUT);
+                        TimeUnit.SECONDS.sleep(Const.BEAT_TIMEOUT);
                     } catch (Throwable e) {
                         if (!toStop) {
                             logger.error(e.getMessage(), e);
@@ -176,12 +176,12 @@ public class TriggerCallbackThread {
      *
      * @param callbackParamList callback param list
      */
-    private void doCallback(List<HandleCallbackParam> callbackParamList){
+    private void doCallback(List<HandleCallbackRequest> callbackParamList){
         boolean callbackRet = false;
         // callback, will retry if error
         for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
             try {
-                ReturnT<String> callbackResult = adminBiz.callback(callbackParamList);
+                Response<String> callbackResult = adminBiz.callback(callbackParamList);
                 if (callbackResult!=null && callbackResult.isSuccess()) {
                     callbackLog(callbackParamList, "<br>----------- xxl-job job callback finish.");
                     callbackRet = true;
@@ -201,8 +201,8 @@ public class TriggerCallbackThread {
     /**
      * callback log
      */
-    private void callbackLog(List<HandleCallbackParam> callbackParamList, String logContent){
-        for (HandleCallbackParam callbackParam: callbackParamList) {
+    private void callbackLog(List<HandleCallbackRequest> callbackParamList, String logContent){
+        for (HandleCallbackRequest callbackParam: callbackParamList) {
             String logFileName = XxlJobFileAppender.makeLogFileName(new Date(callbackParam.getLogDateTim()), callbackParam.getLogId());
             XxlJobContext.setXxlJobContext(new XxlJobContext(
                     -1,
@@ -231,7 +231,7 @@ public class TriggerCallbackThread {
      *
      * @param callbackParamList callback param list
      */
-    private void appendFailCallbackFile(List<HandleCallbackParam> callbackParamList) {
+    private void appendFailCallbackFile(List<HandleCallbackRequest> callbackParamList) {
         // valid
         if (CollectionTool.isEmpty(callbackParamList)) {
             return;
@@ -284,7 +284,7 @@ public class TriggerCallbackThread {
                 }
 
                 // parse callback param
-                List<HandleCallbackParam> callbackParamList = GsonTool.fromJsonList(callbackData, HandleCallbackParam.class);
+                List<HandleCallbackRequest> callbackParamList = GsonTool.fromJsonList(callbackData, HandleCallbackRequest.class);
                 FileTool.delete(callbackLogFile);
 
                 // retry callback
