@@ -58,6 +58,8 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
 - 35、用户管理：支持在线管理系统用户，存在管理员、普通用户两种角色；
 - 36、权限控制：执行器维度进行权限控制，管理员拥有全量权限，普通用户需要分配执行器权限后才允许相关操作；
 - 37、AI任务：原生提供AI执行器，并内置多个AI任务Handler，与spring-ai、ollama、dify等集成打通，支持快速开发AI类任务。
+- 38、审计日志：记录任务操作敏感信息，用于系统监控、审计和安全分析，可快速追溯异常行为以及定位排查问题。
+
 
 ### 1.4 发展
 于2015年中，我在github上创建XXL-JOB项目仓库并提交第一个commit，随之进行系统结构设计，UI选型，交互设计……
@@ -91,7 +93,7 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
 于2021-12-06，XXL-JOB参与"[2021年度OSC中国开源项目评选](https://www.oschina.net/project/top_cn_2021) "评比，在当时已录入的一万多个开源项目中角逐，最终当选"最受欢迎项目"。
 
 > 我司大众点评目前已接入XXL-JOB，内部别名《Ferrari》（Ferrari基于XXL-JOB的V1.1版本定制而成，新接入应用推荐升级最新版本）。
-据最新统计, 自2016-01-21接入至2017-12-01期间，该系统已调度约100万次，表现优异。新接入应用推荐使用最新版本，因为经过数十个版本的更新，系统的任务模型、UI交互模型以及底层调度通讯模型都有了较大的优化和提升，核心功能更加稳定高效。
+> 据最新统计, 自2016-01-21接入至2017-12-01期间，该系统已调度约100万次，表现优异。新接入应用推荐使用最新版本，因为经过数十个版本的更新，系统的任务模型、UI交互模型以及底层调度通讯模型都有了较大的优化和提升，核心功能更加稳定高效。
 
 至今，XXL-JOB已接入多家公司的线上产品线，接入场景如电商业务，O2O业务和大数据作业等，截止最新统计时间为止，XXL-JOB已接入的公司包括不限于：
 
@@ -788,6 +790,22 @@ XXL-JOB是一个分布式任务调度平台，其核心设计目标是开发迅�
     - 691、联通云
     - 692、北京爱话本科技有限公司
     - 693、北京起创科技有限公司
+    - 694、平安证券【平安证券】
+    - 695、合肥中科类脑智能技术有限公司
+    - 696、南京同仁堂健康产业有限公司【同仁堂】
+    - 697、铜仁市碧江区智惠加油站
+    - 698、惟客数据
+    - 699、凤凰新闻【凤凰新闻】
+    - 700、深圳王力智能
+    - 701、返利网数字科技股份有限公司
+    - 702、上海阜能信息科技有限公司
+    - 703、深圳市极能超电数字科技有限公司
+    - 704、海目星激光科技集团股份有限公司
+    - 705、深圳市极能超电数字科技有限公司
+    - 706、安克创新科技股份有限公司【安克】
+    - 707、大庆点神科技有限公司
+    - 708、浙江零跑科技股份有限公司【零跑】
+    - 709、成都成电金盘健康数据技术有限公司
     - ……
 
 > 更多接入的公司，欢迎在 [登记地址](https://github.com/xuxueli/xxl-job/issues/1 ) 登记，登记仅仅为了产品推广。
@@ -893,8 +911,8 @@ xxl.job.timeout=3
 xxl.job.i18n=zh_CN
 
 ## 调度线程池最大线程配置【必填】
-xxl.job.triggerpool.fast.max=200
-xxl.job.triggerpool.slow.max=100
+xxl.job.triggerpool.fast.max=300
+xxl.job.triggerpool.slow.max=200
 
 ### 调度中心日志表数据保存天数 [必填]：过期日志自动清理；限制大于等于7时生效，否则, 如-1，关闭自动清理功能；
 xxl.job.logretentiondays=30
@@ -926,19 +944,28 @@ xxl.job.logretentiondays=30
 - 下载镜像
 
 ```
-// Docker地址：https://hub.docker.com/r/xuxueli/xxl-job-admin/     (建议指定版本号)
-docker pull xuxueli/xxl-job-admin
+/**
+* Docker地址：https://hub.docker.com/r/xuxueli/xxl-job-admin/     
+* 建议指定版本号拉取镜像；
+*/ 
+docker pull xuxueli/xxl-job-admin:{指定版本}
 ```
 
 - 创建容器并运行
 
 ```
 /**
-* 如需自定义 mysql 等配置，可通过 "-e PARAMS" 指定，参数格式 PARAMS="--key=value  --key2=value2" ；
-* 配置项参考文件：/xxl-job/xxl-job-admin/src/main/resources/application.properties
-* 如需自定义 JVM内存参数 等配置，可通过 "-e JAVA_OPTS" 指定，参数格式 JAVA_OPTS="-Xmx512m" ；
+* 如需自定义 “项目配置文件” 中配置项，比如 mysql 配置，可通过 "-e PARAMS" 指定，参数格式: -e PARAMS="--key=value --key2=value2"；
+* （配置项参考文件：/xxl-job/xxl-job-admin/src/main/resources/application.properties）
+* 如需自定义 “JVM内存参数”，可通过 "-e JAVA_OPTS" 指定，参数格式: -e JAVA_OPTS="-Xmx512m"
+* 如需自定义 “日志文件目录”，可通过 "-e LOG_HOME" 指定，参数格式: -e LOG_HOME=/data/applogs
 */
-docker run -e PARAMS="--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" -p 8080:8080 -v /tmp:/data/applogs --name xxl-job-admin  -d xuxueli/xxl-job-admin:{指定版本}
+docker run -d \
+-e PARAMS="--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" \
+-p 8080:8080 \
+-v /tmp:/data/applogs \
+--name xxl-job-admin \
+xuxueli/xxl-job-admin:{指定版本}
 ```
 
 
@@ -962,13 +989,13 @@ docker run -e PARAMS="--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/xxl_jo
 ```
 ### 调度中心部署根地址 [选填]：如调度中心集群部署存在多个地址则用逗号分隔。执行器将会使用该地址进行"执行器心跳注册"和"任务结果回调"；为空则关闭自动注册；
 xxl.job.admin.addresses=http://127.0.0.1:8080/xxl-job-admin
-
 ### 调度中心通讯TOKEN [选填]：非空时启用；
 xxl.job.admin.accessToken=default_token
-
 ### 调度中心通讯超时时间[选填]，单位秒；默认3s；
 xxl.job.admin.timeout=3
 
+### 执行器启用开关 [选填]：默认开启，关闭时不进行执行器初始化；
+xxl.job.executor.enabled=true
 ### 执行器AppName [选填]：执行器心跳注册分组依据；为空则关闭自动注册
 xxl.job.executor.appname=xxl-job-executor-sample
 ### 执行器注册 [选填]：优先使用该配置作为注册地址，为空时使用内嵌服务 ”IP:PORT“ 作为注册地址。从而更灵活的支持容器类型执行器动态IP和动态映射端口问题。
@@ -1731,10 +1758,30 @@ XXL-JOB是一个跨语言的任务调度平台，主要体现在如下几个方�
 
 ### 5.17 调度中心Docker镜像构建
 可以通过以下命令快速构建调度中心，并启动运行；
+
 ```
+/**
+* build package
+*/ 
 mvn clean package
-docker build -t xuxueli/xxl-job-admin:{version} ./xxl-job-admin
-docker run --name xxl-job-admin -p 8080:8080 -d xuxueli/xxl-job-admin
+
+/**
+* build docker image
+*/ 
+docker build -t xuxueli/xxl-job-admin:{指定版本} ./xxl-job-admin
+
+/**
+* 如需自定义 “项目配置文件” 中配置项，比如 mysql 配置，可通过 "-e PARAMS" 指定，参数格式: -e PARAMS="--key=value --key2=value2"；
+* （配置项参考文件：/xxl-job/xxl-job-admin/src/main/resources/application.properties）
+* 如需自定义 “JVM内存参数”，可通过 "-e JAVA_OPTS" 指定，参数格式: -e JAVA_OPTS="-Xmx512m"
+* 如需自定义 “日志文件目录”，可通过 "-e LOG_HOME" 指定，参数格式: -e LOG_HOME=/data/applogs
+*/
+docker run -d \
+-e PARAMS="--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai" \
+-p 8080:8080 \
+-v /tmp:/data/applogs \
+--name xxl-job-admin \
+xuxueli/xxl-job-admin:{指定版本}
 ```
 
 ### 5.20 避免任务重复执行
@@ -1755,6 +1802,28 @@ XXL-JOB日志主要包含如下两部分，均支持日志自动清理，说明�
 
 针对该问题，调度中心提供内置组件进行处理，逻辑为：调度记录停留在 "运行中" 状态超过10min，且对应执行器心跳注册失败不在线，则将本地调度主动标记失败；
 
+### 5.24 Docker Compose 快速部署    
+支持通过 Docker Compose 方式部署并启动 XXL-JOB，包括：数据库、调度中心、示例执行器。
+
+- 第一步：克隆 XXL-JOB    
+```
+git clone --branch "$(curl -s https://api.github.com/repos/xuxueli/xxl-job/releases/latest | jq -r .tag_name)" https://github.com/xuxueli/xxl-job.git
+```
+
+- 第二步：构建 XXL-JOB    
+```
+// 注意：如下命令需要在项目仓库根目录执行
+mvn clean package -Dmaven.test.skip=true
+```
+
+- 第三步：启动 XXL-JOB    
+```
+docker compose down
+docker compose up -d
+
+// 其他：如需调整环境配置，如Mysql密码、端口等，可以在docker-compose.yml中修改；另外，如果需要修改Mysql数据持久化目录，可以通过 MYSQL_PATH 变量在启动时快速设置；
+MYSQL_PATH={自定义数据库持久化目录} docker compose up -d
+```
 
 
 ## 六、调度中心/执行器 OpenApi
@@ -2593,53 +2662,101 @@ public void execute() {
 - 14、【修复】IDOR越权问题修复，提升任务操作及日志管理安全性；
 - 15、【升级】升级多项maven依赖至较新版本，如 netty、groovy、mybatis、spring、spring-ai、dify 等；
 
-### 7.41 版本 v3.2.1 Release Notes[规划中]
-- 1、【新增】执行器新增“任务扫描排除路径”配置项(xxl.job.executor.excludedpackage)，任务扫描时忽略指定包路径下的Bean；支持配置多个包路径、逗号分隔；
-- 2、【优化】执行器任务Bean扫描逻辑优化，完善懒加载Bean检测及过滤机制；
-- 3、【优化】调度时间轮强化，保障不重不漏：调度时间轮单刻度数据去重，避免极端情况下任务重复执行；时间轮转动时校验临近刻度，避免极端情况下遗漏刻度；
-- 4、【优化】任务调度中心调度锁逻辑优化，事务SQL下沉至Mapper层统一管理，并增加测试用例，提升代码可读性以及可维护性；
-- 5、【优化】报表统计SQL优化，修复小概率情况下查询null值问题；报表初始化SQL优化，修复小概率情况增改竞争问题；
-- 6、【优化】任务回调失败日志读写磁盘逻辑优化，解决极端情况下大文件读写内存问题；
-- 7、【重构】调度过期策略、调度类型策略逻辑重构，代码组件化拆分并完善日志，提升健壮性及可维护性；
-- 8、【重构】任务调度中心底层组件重构，组件初始化以及销毁逻辑统一处理，任务触发及和回调逻辑优化，避免资源泄漏风险；
-- 9、【重构】任务调度中心底层组件模块化拆分，移除组件单例以及静态代码逻辑，提升组件可维护性；
-- 10、【修复】脚本任务process销毁逻辑优化，解决风险情况下脚本进程无法终止问题；
-- 11、【修复】调度预读任务数量调整，改为调度线程池大小x10，降低事务颗粒度，提升性能及稳定性；
-- 12、【修复】合并PR-2369，修复脚本任务参数取值问题；
-- 13、【强化】通用HTTP任务（httpJobHandler）强化，支持更丰富请求参数设置，完整参数示例如下：
+### 7.41 版本 v3.3.0 Release Notes[2025-11-29]
+- 1、【新增】执行器新增“任务扫描排除路径”配置项(xxl.job.executor.excludedpackage)，任务扫描时忽略指定包路径下的任务；
+- 2、【优化】执行器任务Bean扫描逻辑调整，优化懒加载Bean检测及过滤机制，避免提前初始化类问题；
+- 3、【新增】合并PR-3840，执行器支持通过XxlJobHelper获取任务触发时间戳；XxlJobHelper组件完善，支持通过“XxlJobHelper.getLogId/getLogDateTime/getLogFileName”方法获取执行日志相关信息；
+- 4、【升级】调度中心UI框架升级，统一交互组件，支持多主题、多标签与局部渲染等，升级UI组件及性能；
+- 5、【优化】调度时间轮组件强化，保障不重不漏：调度时间轮单刻度数据去重，避免极端情况下任务重复执行；时间轮转动时校验临近刻度，避免极端情况下遗漏刻度；
+- 6、【优化】调度任务锁逻辑优化，事务SQL下沉至Mapper层统一管理，并增加测试用例，提升代码可读性以及可维护性；
+- 7、【优化】调度快慢线程池默认配置上调，提升默认配置单机负载；调度预读任务数计算系数下调，降低事务颗粒度，提升性能及稳定性； 
+- 8、【性能】调度中心调整资源加载逻辑，移除不必要的拦截器，提升页面加载性能；
+- 9、【优化】优化日志列表页面展示逻辑，新增展示“日志ID”与“任务名称”信息；
+- 10、【优化】报表统计SQL优化，修复小概率情况下查询null值问题；报表初始化SQL优化，修复小概率情况增改竞争问题；
+- 11、【优化】优日志报告与清理逻辑，增加清理过期日志的异常捕获，避免线程异常退出；
+- 12、【优化】任务回调失败日志读写磁盘逻辑优化，解决极端情况下大文件读写内存问题；
+- 13、【升级】Http通讯组件升级，基于接口代理方式重构通讯组件，提升组件性能及扩展性；
+- 14、【重构】规范API交互协议，通用响应结构体调整为Response，调度中心API统一为Response封装数据；
+  （注意：响应结构体从ReturnT升级为Response，其中属性值“content”会调整为“data”，通过openapi交互场景需要关注） 
+- 15、【重构】调度过期策略、调度类型策略逻辑重构，代码组件化拆分并完善日志，提升健壮性及可维护性；
+- 16、【重构】调度中心底层组件重构，组件初始化以及销毁逻辑统一处理，任务触发及和回调逻辑优化，避免资源泄漏风险；
+- 17、【重构】调度中心底层组件模块化拆分，移除组件单例以及静态代码逻辑，提升组件可维护性；
+- 18、【重构】重构Rolling日志读写逻辑，解决边界条件下异常情况，优化读写性能；
+- 19、【修复】脚本任务process销毁逻辑优化，解决风险情况下脚本进程无法终止问题；
+- 20、【修复】合并PR-2369，修复脚本任务参数取值问题；
+- 21、【新增】任务审计日志，记录任务操作敏感日志信息，如任务新建/更新/删除/启停/触发以及GLUE代码更新等，用于系统监控、审计和安全分析，可快速追溯异常行为以及定位排查问题等。
+  （当前任务审计日志以Info级别输出在系统日志中，可通过关键词 "xxl-job operation log:" 检索过滤）
+- 22、【强化】通用HTTP任务（httpJobHandler）强化，支持更丰富请求参数设置，完整参数示例如下：    
+
+<details>
+    <summary>完整参数示例参考：</summary>    
+    
+    ```
+    {
+        "url": "http://www.baidu.com",
+        "method": "POST",
+        "contentType": "application/json",
+        "headers": {
+            "header01": "value01"
+        },
+        "cookies": {
+            "cookie01": "value01"
+        },
+        "timeout": 3000,
+        "data": "request body data",
+        "form": {
+            "key01": "value01"
+        },
+        "auth": "auth data"
+    }
+    ```
+</details>
+
+- 23、【优化】调度组件日志完善，提升边界情况下问题定位效率；
+- 24、【升级】升级多项maven依赖至较新版本，如 netty、groovy、springboot、spring-ai、dify、mybatis、xxl-sso 等；
+
+**备注：**
+- a、本次升级数据模型向前兼容，v3.2.*版本可直接升级不需要进行数据库表调整；
+- b、本次升级针对客户端rollinglog依赖字段做规范约束，如不关注该功能 v2.4.* 及后续版本客户端不需要升级/可兼容，否则需要升级客户端版本；
+
+### 7.42 版本 v3.3.1 Release Notes[2025-12-06]
+- 1、【新增】新增“执行器启用开关”配置项(xxl.job.executor.enabled)，默认开启，关闭时不进行执行器初始化；
+- 2、【修复】调度组件事务代码调整，修复DB超时等小概率情况下调度终止问题；
+- 3、【修复】合并PR-3869，修复底层通讯超时设置无效问题；
+- 4、【优化】执行器删除逻辑优化，删除时一并清理注册表数据，避免小概率情况下注册数据堆积（ISSUE-3669）；
+- 5、【升级】调度中心升级至 SpringBoot4；升级多项maven依赖至较新版本，如 mybatis、groovy 等；
+
+### 7.43 版本 v3.3.2 Release Notes[ING]
+- 1、【新增】新增 Docker Compose 配置，支持一键配置启动调度中心集群；
+
+<details>
+    <summary>Docker Compose启动步骤：</summary>    
+
+    ```
+    // 下载 XXL-JOB
+    git clone --branch "$(curl -s https://api.github.com/repos/xuxueli/xxl-job/releases/latest | jq -r .tag_name)" https://github.com/xuxueli/xxl-job.git
+    // 构建 XXL-JOB
+    mvn clean package -Dmaven.test.skip=true
+    // 启动 XXL-JOB
+    MYSQL_PATH={自定义数据库持久化目录} docker compose up -d
+    // 停止 XXL-JOB
+    docker compose down
+    ```
+</details>
 ```
-{
-    "url": "http://www.baidu.com",
-    "method": "POST",
-    "contentType": "application/json",
-    "headers": {
-        "header01": "value01"
-    },
-    "cookies": {
-        "cookie01": "value01"
-    },
-    "timeout": 3000,
-    "data": "request body data",
-    "form": {
-        "key01": "value01"
-    },
-    "auth": "auth data"
-}
-```
-- 14、【优化】调度组件日志完善，提升边界情况下问题定位效率；
-- 15、【升级】升级多项maven依赖至较新版本，如 netty、groovy、spring、spring-ai、dify 等；
-- 16、【重构】规范API交互协议，通用响应结构体调整为Response，调度中心API统一为Response封装数据；
-（注意：响应结构体从ReturnT升级为Response，其中属性值“content”会调整为“data”，取值逻辑需注意）
-- 17、【升级】Http通讯组件升级，基于接口代理方式重构通讯组件，提升组件性能及扩展性；
-- 18、【ING】UI框架重构升级，提升交互体验；
-- 19、【ING】调整资源加载逻辑，移除不必要的拦截器逻辑，提升页面加载效率；
+
+- 2、【优化】调度线程事务提交逻辑调整，避免边界条件下线程异常退出，增强健壮性；
+- 3、【优化】调度日志列表排序逻辑优化，提升易读性；
+- 4、【TODO】任务调度触发后分批批量更新，提升调度性能；
+- 5、【TODO】优雅停机：服务端停机，检测时间轮非空sleep 5s；客户端停机，检测任务运行中，server停止后sleep5s；
 
 
 ### TODO LIST
 - 1、调度隔离：调度中心针对不同执行器，各自维护不同的调度和远程触发组件。
 - 2、任务优先级：调度与执行阶段按照优先级分配资源。
 - 3、多数据库支持，DAO层通过JPA实现，不限制数据库类型。
-- 4、执行器Log清理功能：调度中心Log删除时同步删除执行器中的Log文件；
+- 4、OpenApi：
+  - 执行器Log文件清理：支持调度中心远程删除执行器中指定任务的Log文件；
 - 5、性能优化：任务、执行器数据全量本地缓存；新增消息表广播通知；
 - 6、DAG流程任务
     - 子任务：废弃
@@ -2648,10 +2765,8 @@ public void execute() {
     - 分片任务：全部完成后才会出发后置节点；
     - 配置并列的"a-b、b-c"路径列表，构成串行、并行、dag任务流程，"dagre-d3"绘图；任务依赖，流程图，子任务+会签任务，各节点日志；支持根据成功、失败选择分支；
 - 7、任务标签：方便搜索；
-- 8、告警增强：
-    - 邮件告警：支持自定义标题、模板格式；
-    - webhook告警：支持自定义告警URL、请求体格式；
-- 9、安全强化：AccessToken动态生成、动态启停；控制调度、回调；
+- 8、GLUE 模式 Web Ide 版本对比功能；
+- 9、自定义失败重试时间间隔；
 - 10、任务导入导出工具，灵活支持版本升级、迁移等场景。
 - 11、任务日志重构：一次调度只记录一条主任务，维护起止时间和状态。
     - 普通任务：只记录一条主任务；
@@ -2659,13 +2774,28 @@ public void execute() {
     - 重试任务：失败时，新增主任务。所有调度记录，包括入口调度和重试调度，均挂载主任务上。
 - 12、分片任务：全部完成后才会出发后置节点；
 - 13、日期过滤：支持多个时间段排除；
-- 13、GLUE 模式 Web Ide 版本对比功能；
 - 14、提供执行器Docker镜像；
 - 15、脚本任务，支持数据参数，新版本仅支持单参数不支持需要兼容；
 - 17、批量调度：调度请求入queue，调度线程批量获取调度请求并发起远程调度；提高线程效率；
 - 18、执行器端口复用，复用容器端口提供通讯服务；
-- 19、自定义失败重试时间间隔；
-- 20、安全功能增强，通讯加密参数改用加密数据避免AccessToken明文， 降低token泄漏风险；
+- 19、安全功能增强，通讯加密参数改用加密数据避免AccessToken明文， 降低token泄漏风险；
+- 20、告警增强：
+    - 邮件告警：支持自定义标题、模板格式；
+    - webhook告警：支持自定义告警URL、请求体格式；
+- 21、公共告警策略：执行器维度设置多告警策略，任务勾选启用；待评估任务或执行器维度；
+- 20、日志策略：
+  - 调度日志：全局配置：废弃； 新增“调度日志策略”：任务维度自定义，保留3天、7天、1个月、3个月、一年、永久；
+  - 执行日志：新增“执行RollingLog开关”：任务维度自定义，支持：RollingLog、普通日志（slf4j输出）、关闭（不输出）；
+- 21、AccessToken：废弃全局配置；支持在线管理，动态生成、动态启停；
+- 22、任务执行后分批批量更新，提升调度性能；
+- 23、任务管理OpenAPI;
+- 24、调度中心启动参数线上配置：告警发送邮箱、Token，支持线上配置生效，修改不需重启机器；
+- 25、执行器内嵌server切换tomcat，精简依赖；
+- 26、日志策略新增：
+  - 调度日志策略：任务级设置，最少保留1天。 
+  - 执行日志策略：可选 RollingLog、slf4jLog；
+  - 清理逻辑，性能重构。
+
 
 ## 八、其他
 
