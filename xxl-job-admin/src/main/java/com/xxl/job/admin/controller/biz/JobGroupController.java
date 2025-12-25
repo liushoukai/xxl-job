@@ -12,6 +12,7 @@ import com.xxl.job.core.constant.RegistType;
 import com.xxl.sso.core.annotation.XxlSso;
 import com.xxl.tool.core.CollectionTool;
 import com.xxl.tool.core.StringTool;
+import com.xxl.tool.http.HttpTool;
 import com.xxl.tool.response.PageModel;
 import com.xxl.tool.response.Response;
 import jakarta.annotation.Resource;
@@ -41,7 +42,7 @@ public class JobGroupController {
 	@RequestMapping
 	@XxlSso(role = Consts.ADMIN_ROLE)
 	public String index(Model model) {
-		return "jobgroup/jobgroup.index";
+		return "biz/group.list";
 	}
 
 	@RequestMapping("/pageList")
@@ -49,8 +50,8 @@ public class JobGroupController {
 	@XxlSso(role = Consts.ADMIN_ROLE)
 	public Response<PageModel<XxlJobGroup>> pageList(@RequestParam(required = false, defaultValue = "0") int offset,
 													 @RequestParam(required = false, defaultValue = "10") int pagesize,
-													 @RequestParam String appname,
-													 @RequestParam String title) {
+													 String appname,
+													 String title) {
 
 		// page query
 		List<XxlJobGroup> list = xxlJobGroupMapper.pageList(offset, pagesize, appname, title);
@@ -58,16 +59,16 @@ public class JobGroupController {
 
 		// package result
 		PageModel<XxlJobGroup> pageModel = new PageModel<>();
-		pageModel.setPageData(list);
-		pageModel.setTotalCount(list_count);
+		pageModel.setData(list);
+		pageModel.setTotal(list_count);
 
 		return Response.ofSuccess(pageModel);
 	}
 
-	@RequestMapping("/save")
+	@RequestMapping("/insert")
 	@ResponseBody
 	@XxlSso(role = Consts.ADMIN_ROLE)
-	public Response<String> save(XxlJobGroup xxlJobGroup){
+	public Response<String> insert(XxlJobGroup xxlJobGroup){
 
 		// valid
 		if (StringTool.isBlank(xxlJobGroup.getAppname())) {
@@ -98,6 +99,9 @@ public class JobGroupController {
 				if (StringTool.isBlank(item)) {
 					return Response.ofFail( I18nUtil.getString("jobgroup_field_registryList_unvalid") );
 				}
+                if (!(HttpTool.isHttp(item) || HttpTool.isHttps(item))) {
+                    return Response.ofFail( I18nUtil.getString("jobgroup_field_registryList_unvalid")+"[2]" );
+                }
 			}
 		}
 
@@ -141,6 +145,9 @@ public class JobGroupController {
 				if (StringTool.isBlank(item)) {
 					return Response.ofFail(I18nUtil.getString("jobgroup_field_registryList_unvalid") );
 				}
+                if (!(HttpTool.isHttp(item) || HttpTool.isHttps(item))) {
+                    return Response.ofFail( I18nUtil.getString("jobgroup_field_registryList_unvalid")+"[2]" );
+                }
 			}
 		}
 
@@ -171,23 +178,39 @@ public class JobGroupController {
 		return appAddressMap.get(appnameParam);
 	}
 
-	@RequestMapping("/remove")
+	@RequestMapping("/delete")
 	@ResponseBody
 	@XxlSso(role = Consts.ADMIN_ROLE)
-	public Response<String> remove(@RequestParam("id") int id){
+	public Response<String> delete(@RequestParam("ids[]") List<Integer> ids){
 
-		// valid
+		// parse id
+		if (CollectionTool.isEmpty(ids) || ids.size()!=1) {
+			return Response.ofFail(I18nUtil.getString("system_please_choose") + I18nUtil.getString("system_one") + I18nUtil.getString("system_data"));
+		}
+		int id = ids.get(0);
+
+        // valid repeat operation
+        XxlJobGroup xxlJobGroup = xxlJobGroupMapper.load(id);
+        if (xxlJobGroup == null) {
+            return Response.ofSuccess();
+        }
+
+		// whether exists job
 		int count = xxlJobInfoMapper.pageListCount(0, 10, id, -1,  null, null, null);
 		if (count > 0) {
 			return Response.ofFail( I18nUtil.getString("jobgroup_del_limit_0") );
 		}
 
+        // whether only exists one group
 		List<XxlJobGroup> allList = xxlJobGroupMapper.findAll();
 		if (allList.size() == 1) {
 			return Response.ofFail( I18nUtil.getString("jobgroup_del_limit_1") );
 		}
 
+        // remove group
 		int ret = xxlJobGroupMapper.remove(id);
+        // remove registry-data
+        xxlJobRegistryMapper.removeByRegistryGroupAndKey(RegistType.EXECUTOR.name(), xxlJobGroup.getAppname());
 		return (ret>0)?Response.ofSuccess():Response.ofFail();
 	}
 
